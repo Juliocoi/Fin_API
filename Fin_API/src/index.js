@@ -123,4 +123,20 @@ app.get("/account", verifyExistsAccountCPF, (req, resp) => {
   return resp.json(customer);
 });
 
+app.delete("/account", verifyExistsAccountCPF, (req, resp) => {
+  const { customer } = req;
+
+  customers.splice(customer, 1);
+
+  return resp.status(204).send();
+});
+
+app.get("/balance", verifyExistsAccountCPF, (req, resp) => {
+  const { customer } = req;
+
+  const balance = getBalance(customer.statement);
+  
+  return resp.json(balance);
+});
+
 app.listen(3333, () => console.log("Servidor rodando"));
