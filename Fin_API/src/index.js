@@ -51,10 +51,7 @@ app.post("/account", (req, resp) => {
   });
 
   return resp.status(201).send()
-
-
 });
-
 
 app.get("/statement", verifyExistsAccountCPF, (req, resp) => {
   const { customer } = req;
@@ -98,6 +95,32 @@ app.post("/withdraw", verifyExistsAccountCPF, (req, resp) => {
 
   return resp.status(201).send();
 
+});
+
+app.get("/statement/date", verifyExistsAccountCPF, (req, resp) => {
+  const { customer } = req;
+  const { date } = req.query;
+
+  const dateFormat = new Date(date + " 00:00")
+
+  const statement = customer.statement.filter((statement) => statement.created_at.toDateString() === new Date(dateFormat).toDateString())
+
+  return resp.status(200).json(statement);
+});
+
+app.put("/account", verifyExistsAccountCPF, (req, resp) => {
+  const { name } = req.body;
+  const { customer } = req;
+
+  customer.name = name;
+
+  return resp.status(201).send();
+});
+
+app.get("/account", verifyExistsAccountCPF, (req, resp) => {
+  const { customer } = req;
+
+  return resp.json(customer);
 });
 
 app.listen(3333, () => console.log("Servidor rodando"));
