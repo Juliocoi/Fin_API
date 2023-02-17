@@ -7,14 +7,26 @@ app.use(express.json())
 
 const customers = []
 
+function getBalance(statement) {
+  const balance = statement.reduce((acc, operation) => {
+    if (operation.type === 'credit') {
+      return acc + operation.amount;
+    } else {
+      return acc - operation.amount;
+    }
+  }, 0);
+
+  return balance;
+}
+
 // Middleware
-function verifyExistsAccountCPF(req, resp, next){
-  const {cpf} = req.headers;
+function verifyExistsAccountCPF(req, resp, next) {
+  const { cpf } = req.headers;
 
   const customer = customers.find((customer) => customer.cpf === cpf);
 
-  if(!customer){
-    return resp.status(400).json({error: "Customer not found."})
+  if (!customer) {
+    return resp.status(400).json({ error: "Customer not found." })
   }
 
   req.customer = customer;
@@ -27,8 +39,8 @@ app.post("/account", (req, resp) => {
 
   const custumersAlreadyExists = customers.some((customer) => customer.cpf === cpf);
 
-  if (custumersAlreadyExists){
-    return resp.status(400).json({Error: "Customer already exists."})
+  if (custumersAlreadyExists) {
+    return resp.status(400).json({ Error: "Customer already exists." })
   }
 
   customers.push({
@@ -40,13 +52,52 @@ app.post("/account", (req, resp) => {
 
   return resp.status(201).send()
 
- 
+
 });
+
 
 app.get("/statement", verifyExistsAccountCPF, (req, resp) => {
   const { customer } = req;
 
   return resp.status(200).json(customer.statement);
-})
- 
+});
+
+app.post("/deposit", verifyExistsAccountCPF, (req, resp) => {
+  const { description, amount } = req.body;
+  const { customer } = req;
+
+  const statementOpration = {
+    description,
+    amount,
+    created_at: new Date(),
+    type: "credit"
+  }
+
+  customer.statement.push(statementOpration);
+
+  return resp.status(201).send();
+});
+
+app.post("/withdraw", verifyExistsAccountCPF, (req, resp) => {
+  const { amount } = req.body;
+  const { customer } = req;
+
+  const balance = getBalance(customer.statement);
+  
+  if(balance < amount) {
+    return resp.status(400).json({ error: "Insulfficient funds." })
+  }
+
+  const statementOpration = {
+    amount,
+    created_at: new Date(),
+    type: "debit",
+  };
+
+  customer.statement.push(statementOpration);
+
+  return resp.status(201).send();
+
+});
+
 app.listen(3333, () => console.log("Servidor rodando"));
